@@ -1,0 +1,67 @@
+@{
+          Layout = null;
+      }
+      
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <title>Camera Toggle</title>
+      </head>
+      <body>
+          <video id="video" width="640" height="480" autoplay style="display:none;"></video>
+          <button id="toggleBtn">Turn On Camera</button>
+          <script>
+              const userId = 'YOUR_USER_ID_HERE'; // Replace with actual user id
+              const video = document.getElementById('video');
+              const btn = document.getElementById('toggleBtn');
+              let stream = null;
+              let isOn = false;
+      
+              async function getCameraState() {
+                  const res = await fetch(`/api/UserCamera/${userId}`);
+                  const data = await res.json();
+                  isOn = data.isOn;
+                  updateUI();
+              }
+      
+              async function toggleCamera() {
+                  await fetch('/api/UserCamera/toggle', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ userId, turnOn: !isOn })
+                  });
+                  isOn = !isOn;
+                  updateUI();
+              }
+      
+              function updateUI() {
+                  btn.textContent = isOn ? 'Turn Off Camera' : 'Turn On Camera';
+                  if (isOn) {
+                      startCamera();
+                  } else {
+                      stopCamera();
+                  }
+              }
+      
+              async function startCamera() {
+                  if (!stream) {
+                      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                      video.srcObject = stream;
+                  }
+                  video.style.display = 'block';
+              }
+      
+              function stopCamera() {
+                  if (stream) {
+                      stream.getTracks().forEach(track => track.stop());
+                      stream = null;
+                  }
+                  video.style.display = 'none';
+              }
+      
+              btn.addEventListener('click', toggleCamera);
+      
+              getCameraState();
+          </script>
+      </body>
+      </html>
