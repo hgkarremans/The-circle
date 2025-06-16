@@ -1,3 +1,4 @@
+using The_circle.API.Hubs;
 using The_circle.Application;
 using The_circle.Infrastructure;
 
@@ -7,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<IUserCameraReadRepository, InMemoryUserCameraReadRepository>();
 builder.Services.AddSingleton<IUserCameraWriteRepository, InMemoryUserCameraWriteRepository>();
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -20,6 +22,8 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+app.MapHub<CameraHub>("/cameraHub");
 
 app.UseRouting();
 

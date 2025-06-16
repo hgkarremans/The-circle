@@ -28,3 +28,14 @@ C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\T
 C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\obj\Debug\net8.0\The-circle.pdb
 C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\obj\Debug\net8.0\The-circle.genruntimeconfig.cache
 C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\obj\Debug\net8.0\ref\The-circle.dll
+C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\bin\Debug\net8.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\bin\Debug\net8.0\Microsoft.Extensions.Diagnostics.Abstractions.dll
+C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\bin\Debug\net8.0\Microsoft.Extensions.Hosting.Abstractions.dll
+C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\bin\Debug\net8.0\Microsoft.Extensions.Logging.Abstractions.dll
+C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\bin\Debug\net8.0\Microsoft.Extensions.ObjectPool.dll
+C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\bin\Debug\net8.0\Microsoft.Extensions.Options.dll
+C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\bin\Debug\net8.0\Newtonsoft.Json.dll
+C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\bin\Debug\net8.0\System.Net.WebSockets.WebSocketProtocol.dll
+C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\obj\Debug\net8.0\The-circle.csproj.AssemblyReference.cache
+C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\obj\Debug\net8.0\The-circle.sourcelink.json
+C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\obj\Debug\net8.0\The-circle.csproj.CopyComplete

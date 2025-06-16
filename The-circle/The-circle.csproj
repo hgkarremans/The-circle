@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Presentation\ApiController\" />
+      <Folder Include="API\Controllers\" />
     </ItemGroup>
 
     <ItemGroup>
@@ -36,6 +36,10 @@
       <AdditionalFiles Include="Views\Shared\_ValidationScriptsPartial.cshtml" />
       <AdditionalFiles Include="Views\_ViewImports.cshtml" />
       <AdditionalFiles Include="Views\_ViewStart.cshtml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
     </ItemGroup>
 
 </Project>
