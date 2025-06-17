@@ -1,67 +1,81 @@
-@{
-          Layout = null;
-      }
-      
-      <!DOCTYPE html>
-      <html lang="">
-      <head>
-          <title>Camera Toggle</title>
-      </head>
-      <body>
-          <video id="video" width="640" height="480" autoplay style="display:none;"></video>
-          <button id="toggleBtn">Turn On Camera</button>
-          <script>
-              const userId = 'YOUR_USER_ID_HERE'; // Replace with actual user id
-              const video = document.getElementById('video');
-              const btn = document.getElementById('toggleBtn');
-              let stream = null;
-              let isOn = false;
-      
-              async function getCameraState() {
-                  const res = await fetch(`/api/UserCamera/${userId}`);
-                  const data = await res.json();
-                  isOn = data.isOn;
-                  updateUI();
-              }
-      
-              async function toggleCamera() {
-                  await fetch('/api/UserCamera/toggle', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ userId, turnOn: !isOn })
-                  });
-                  isOn = !isOn;
-                  updateUI();
-              }
-      
-              function updateUI() {
-                  btn.textContent = isOn ? 'Turn Off Camera' : 'Turn On Camera';
-                  if (isOn) {
-                      startCamera();
-                  } else {
-                      stopCamera();
-                  }
-              }
-      
-              async function startCamera() {
-                  if (!stream) {
-                      stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                      video.srcObject = stream;
-                  }
-                  video.style.display = 'block';
-              }
-      
-              function stopCamera() {
-                  if (stream) {
-                      stream.getTracks().forEach(track => track.stop());
-                      stream = null;
-                  }
-                  video.style.display = 'none';
-              }
-      
-              btn.addEventListener('click', toggleCamera);
-      
-              getCameraState();
-          </script>
-      </body>
-      </html>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-time Video Stream</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+</head>
+<body>
+<video id="video" width="640" height="480" autoplay muted></video>
+<button id="toggleBtn">Start Camera</button>
+
+<script>
+    const video = document.getElementById('video');
+    const btn = document.getElementById('toggleBtn');
+    let stream = null;
+    let isStreaming = false;
+
+    const streamId = crypto.randomUUID(); // Unique ID for the stream
+    let chunkIndex = 0;
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/cameraHub")
+        .build();
+
+    async function startCamera() {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        video.srcObject = stream;
+        sendFrames();
+    }
+
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+    }
+
+    btn.onclick = async () => {
+        if (!isStreaming) {
+            await connection.start();
+            await startCamera();
+            btn.textContent = "Stop Camera";
+            isStreaming = true;
+        } else {
+            stopCamera();
+            await connection.stop();
+            btn.textContent = "Start Camera";
+            isStreaming = false;
+        }
+    };
+
+    async function sendFrames() {
+        if (!stream) return;
+
+        const videoTrack = stream.getVideoTracks()[0];
+        const imageCapture = new ImageCapture(videoTrack);
+
+        async function captureAndSend() {
+            try {
+                const bitmap = await imageCapture.grabFrame();
+                const canvas = document.createElement('canvas');
+                canvas.width = bitmap.width;
+                canvas.height = bitmap.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(bitmap, 0, 0);
+
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.5));
+                const arrayBuffer = await blob.arrayBuffer();
+                const bytes = Array.from(new Uint8Array(arrayBuffer)); // Convert to plain array for SignalR
+
+                await connection.invoke("SendVideoChunk", bytes, streamId, chunkIndex++);
+                setTimeout(captureAndSend, 33); // ~30 FPS
+            } catch (err) {
+                console.error("Error capturing/sending frame:", err);
+            }
+        }
+
+        captureAndSend();
+    }
+</script>
+</body>
+</html>

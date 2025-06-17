@@ -7,17 +7,11 @@ namespace The_circle.Infrastructure;
 
 public class InMemoryUserCameraWriteRepository : IUserCameraWriteRepository
 {
-    private static readonly ConcurrentDictionary<Guid, List<VideoChunk>> Storage = new();
+    private readonly List<VideoChunk> _chunks = new();
 
     public Task SaveChunkAsync(VideoChunk videoChunk)
     {
-        var chunks = Storage.GetOrAdd(videoChunk.StreamId, _ => new List<VideoChunk>());
-
-        lock (chunks) 
-        {
-            chunks.Add(videoChunk);
-        }
-
+        _chunks.Add(videoChunk);
         return Task.CompletedTask;
     }
 }

@@ -15,8 +15,19 @@ public class CameraHub : Hub
 
     public async Task SendVideoChunk(byte[] chunk, string streamId, int chunkIndex)
     {
-        await Clients.Others.SendAsync("ReceiveVideoChunk", chunk, streamId, chunkIndex);
+        try
+        {
+            Console.WriteLine($"[CameraHub] Received chunk #{chunkIndex} from stream {streamId}, chunk size: {chunk.Length} bytes");
 
-        await _mediator.Send(new SaveVideoChunkCommand(streamId, chunkIndex, chunk));
+            await Clients.Others.SendAsync("ReceiveVideoChunk", chunk, streamId, chunkIndex);
+
+            await _mediator.Send(new SaveVideoChunkCommand(streamId, chunkIndex, chunk));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[CameraHub] Exception: {ex}");
+            throw;  
+        }
     }
+
 }
