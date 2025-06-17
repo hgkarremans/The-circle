@@ -1,14 +1,14 @@
-using The_circle.API.Hubs;
 using The_circle.Application;
 using The_circle.Infrastructure;
+using The_circle.Presentation.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddSingleton<IUserCameraReadRepository, InMemoryUserCameraReadRepository>();
 builder.Services.AddSingleton<IUserCameraWriteRepository, InMemoryUserCameraWriteRepository>();
 builder.Services.AddSignalR();
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Program>());
 
 var app = builder.Build();
 

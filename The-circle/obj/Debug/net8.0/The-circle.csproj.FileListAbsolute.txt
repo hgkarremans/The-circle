@@ -39,3 +39,5 @@ C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\T
 C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\obj\Debug\net8.0\The-circle.csproj.AssemblyReference.cache
 C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\obj\Debug\net8.0\The-circle.sourcelink.json
 C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\obj\Debug\net8.0\The-circle.csproj.CopyComplete
+C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\bin\Debug\net8.0\MediatR.dll
+C:\Users\hgkar\Documents\Avans\Jaar3\Periode4\The-circle-herkansing\The-circle\The-circle\bin\Debug\net8.0\MediatR.Contracts.dll

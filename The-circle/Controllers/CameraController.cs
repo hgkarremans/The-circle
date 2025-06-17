@@ -8,12 +8,10 @@ using Microsoft.AspNetCore.Mvc;
     public class UserCameraController : ControllerBase
     {
         private readonly IUserCameraReadRepository _readRepository;
-        private readonly ToggleCameraCommandHandler _toggleCameraHandler;
     
-        public UserCameraController(IUserCameraReadRepository readRepository, ToggleCameraCommandHandler toggleCameraHandler)
+        public UserCameraController(IUserCameraReadRepository readRepository)
         {
             _readRepository = readRepository;
-            _toggleCameraHandler = toggleCameraHandler;
         }
     
         [HttpGet("{userId}")]
@@ -21,12 +19,5 @@ using Microsoft.AspNetCore.Mvc;
         {
             var userCamera = await _readRepository.GetByUserIdAsync(userId);
             return Ok(new { isOn = userCamera?.IsOn ?? false });
-        }
-    
-        [HttpPost("toggle")]
-        public async Task<IActionResult> ToggleCamera([FromBody] ToggleCameraCommand command)
-        {
-            await _toggleCameraHandler.Handle(command, default);
-            return Ok();
         }
     }

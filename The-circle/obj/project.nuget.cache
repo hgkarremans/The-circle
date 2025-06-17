@@ -1,9 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "g1o9SYNawHc=",
+  "dgSpecHash": "pNGMbF788D0=",
   "success": true,
   "projectFilePath": "C:\\Users\\hgkar\\Documents\\Avans\\Jaar3\\Periode4\\The-circle-herkansing\\The-circle\\The-circle\\The-circle.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\hgkar\\.nuget\\packages\\mediatr\\12.5.0\\mediatr.12.5.0.nupkg.sha512",
+    "C:\\Users\\hgkar\\.nuget\\packages\\mediatr.contracts\\2.0.1\\mediatr.contracts.2.0.1.nupkg.sha512",
     "C:\\Users\\hgkar\\.nuget\\packages\\microsoft.aspnetcore.authentication.abstractions\\2.3.0\\microsoft.aspnetcore.authentication.abstractions.2.3.0.nupkg.sha512",
     "C:\\Users\\hgkar\\.nuget\\packages\\microsoft.aspnetcore.authorization\\2.3.0\\microsoft.aspnetcore.authorization.2.3.0.nupkg.sha512",
     "C:\\Users\\hgkar\\.nuget\\packages\\microsoft.aspnetcore.authorization.policy\\2.3.0\\microsoft.aspnetcore.authorization.policy.2.3.0.nupkg.sha512",
