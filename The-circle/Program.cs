@@ -24,7 +24,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-app.UseRouting();           // <-- THIS must come before MapHub
+app.UseRouting();           
 
 app.UseAuthorization();
 
