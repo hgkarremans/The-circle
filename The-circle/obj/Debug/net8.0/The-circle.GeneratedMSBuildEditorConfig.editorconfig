@@ -58,10 +58,14 @@ build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/hgkar/Documents/Avans/Jaar3/Periode4/The-circle-herkansing/The-circle/The-circle/Views/Home/Camera.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxDYW1lcmEuY3NodG1s
+[C:/Users/hgkar/Documents/Avans/Jaar3/Periode4/The-circle-herkansing/The-circle/The-circle/Views/Camera/Camera.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2FtZXJhXENhbWVyYS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/hgkar/Documents/Avans/Jaar3/Periode4/The-circle-herkansing/The-circle/The-circle/Views/Home/Streaminghub.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxTdHJlYW1pbmdodWIuY3NodG1s
+[C:/Users/hgkar/Documents/Avans/Jaar3/Periode4/The-circle-herkansing/The-circle/The-circle/Views/Camera/ReceiveStream.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2FtZXJhXFJlY2VpdmVTdHJlYW0uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/hgkar/Documents/Avans/Jaar3/Periode4/The-circle-herkansing/The-circle/The-circle/Views/Camera/Streaminghub.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2FtZXJhXFN0cmVhbWluZ2h1Yi5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 

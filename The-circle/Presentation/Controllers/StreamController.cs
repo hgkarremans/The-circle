@@ -13,14 +13,14 @@ public class StreamController : ControllerBase
         _buffer = buffer;
     }
 
-    [HttpGet("/stream")]
-    public async Task Stream()
+    [HttpGet("/stream/{streamId}")]
+    public async Task Stream(Guid streamId)
     {
         Response.ContentType = "text/event-stream";
 
         while (!HttpContext.RequestAborted.IsCancellationRequested)
         {
-            var data = _buffer.GetFrame();
+            var data = _buffer.GetFrame(streamId);
             if (!string.IsNullOrEmpty(data))
             {
                 await Response.WriteAsync($"data: {data}\n\n");
@@ -30,5 +30,4 @@ public class StreamController : ControllerBase
             await Task.Delay(100);
         }
     }
-    
 }

@@ -16,19 +16,30 @@ public class UdpVideoListenerService : BackgroundService
         var udpClient = new UdpClient(9000);
         udpClient.EnableBroadcast = true;
 
+        Console.WriteLine("[UDP Listener] Listening on UDP port 9000...");
+
         while (!stoppingToken.IsCancellationRequested)
         {
-            var result = await udpClient.ReceiveAsync();
-            using var ms = new MemoryStream(result.Buffer);
-            using var reader = new BinaryReader(ms);
+            try
+            {
+                var result = await udpClient.ReceiveAsync();
+                using var ms = new MemoryStream(result.Buffer);
+                using var reader = new BinaryReader(ms);
 
-            var streamId = new Guid(reader.ReadBytes(16));
-            var chunkIndex = reader.ReadInt32();
-            var length = reader.ReadInt32();
-            var chunk = reader.ReadBytes(length);
+                var streamIdBytes = reader.ReadBytes(16);
+                var streamId = new Guid(streamIdBytes);
+                var chunkIndex = reader.ReadInt32();
+                var chunkSize = reader.ReadInt32();
+                var chunk = reader.ReadBytes(chunkSize);
 
-            _buffer.SetFrame(chunkIndex, chunk);
+                _buffer.SetFrame(streamId, chunkIndex, chunk);
+
+                Console.WriteLine($"[UDP Listener] Received chunk {chunkIndex} for stream {streamId}, size {chunkSize} bytes");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[UDP Listener] Error: {ex.Message}");
+            }
         }
     }
-
 }

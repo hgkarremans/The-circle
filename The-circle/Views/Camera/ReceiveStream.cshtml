@@ -1,0 +1,24 @@
+@{
+Layout = null;
+var streamId = ViewBag.StreamId;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bekijk stream</title>
+</head>
+<body>
+<h2>Stream ID: @streamId</h2>
+<img id="frame" width="640" height="480" />
+
+<script>
+    const img = document.getElementById('frame');
+    const streamId = "@streamId";
+
+    const evtSource = new EventSource(`/stream/${streamId}`);
+    evtSource.onmessage = function(event) {
+        img.src = "data:image/jpeg;base64," + event.data;
+    };
+</script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Streams</title>
+    <style>
+        body { font-family: sans-serif; }
+        .stream { border: 1px solid #ccc; padding: 10px; margin: 10px; }
+        .placeholder { width: 320px; height: 240px; background: #eee; display: flex; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body>
+<h1>Live Streams</h1>
+<div id="streams"></div>
+
+<script>
+    async function fetchStreams() {
+        const res = await fetch("/api/streams");
+        const streamIds = await res.json();
+        const container = document.getElementById("streams");
+
+        container.innerHTML = "";
+        streamIds.forEach(id => {
+            const div = document.createElement("div");
+            div.className = "stream";
+            div.innerHTML = `
+            <div class="placeholder">Stream: ${id}</div>
+            <button onclick="watch('${id}')">Bekijk stream</button>
+        `;
+            container.appendChild(div);
+        });
+    }
+
+    function watch(id) {
+        window.location.href = `/Camera/ReceiveStream?streamId=${id}`;
+    }
+
+    setInterval(fetchStreams, 2000);
+    fetchStreams();
+</script>
+</body>
+</html>
