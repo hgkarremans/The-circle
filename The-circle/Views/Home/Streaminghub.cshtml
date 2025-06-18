@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-time Video Streaming hub</title>
+    <style>
+        body { font-family: Arial; background: #111; color: #fff; text-align: center; }
+        img { border: 2px solid #555; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<h1>Live Videostream</h1>
+<img id="frame" width="640" height="480" alt="Stream komt hier..." />
+
+<script>
+    const img = document.getElementById('frame');
+    const evtSource = new EventSource("/stream"); // Zorg dat /stream SSE-endpoint werkt
+
+    evtSource.onmessage = function(event) {
+        const base64 = event.data;
+        img.src = "data:image/jpeg;base64," + base64;
+    };
+
+    evtSource.onerror = function(error) {
+        console.error("SSE error:", error);
+    };
+</script>
+
+</body>
+</html>

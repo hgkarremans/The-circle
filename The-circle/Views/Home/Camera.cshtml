@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Camera Zender</title>
+</head>
+<body>
+<video id="video" width="320" height="240" autoplay muted></video>
+<button id="toggleBtn">Start Camera</button>
+
+<script>
+    const video = document.getElementById('video');
+    const btn = document.getElementById('toggleBtn');
+    let stream = null;
+    let isStreaming = false;
+    const streamId = crypto.randomUUID();
+    let chunkIndex = 0;
+
+    btn.onclick = async () => {
+        if (!isStreaming) {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+            sendFrames();
+            isStreaming = true;
+            btn.textContent = 'Stop Camera';
+        } else {
+            stream.getTracks().forEach(t => t.stop());
+            isStreaming = false;
+            btn.textContent = 'Start Camera';
+        }
+    };
+
+    function sendFrames() {
+        const track = stream.getVideoTracks()[0];
+        const capture = new ImageCapture(track);
+
+        async function captureAndSend() {
+            const bitmap = await capture.grabFrame();
+            const canvas = document.createElement('canvas');
+            canvas.width = bitmap.width;
+            canvas.height = bitmap.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(bitmap, 0, 0);
+
+            canvas.toBlob(async (blob) => {
+                const buffer = await blob.arrayBuffer();
+                await fetch("/api/videochunk", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/octet-stream",
+                        "X-Stream-Id": streamId,
+                        "X-Chunk-Index": chunkIndex++
+                    },
+                    body: buffer
+                });
+            }, 'image/jpeg', 0.5);
+
+            if (isStreaming) setTimeout(captureAndSend, 100);
+        }
+
+        captureAndSend();
+    }
+</script>
+</body>
+</html>

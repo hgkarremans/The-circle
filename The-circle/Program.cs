@@ -1,14 +1,17 @@
 using The_circle.Application;
+using The_circle.Application.Services;
 using The_circle.Infrastructure;
-using The_circle.Presentation.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Services
 builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<IUserCameraWriteRepository, InMemoryUserCameraWriteRepository>();
-builder.Services.AddSignalR();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Program>());
+
+builder.Services.AddSingleton<VideoFrameBufferService>();
+builder.Services.AddHostedService<UdpVideoListenerService>();
+
 
 var app = builder.Build();
 
@@ -25,7 +28,6 @@ app.UseRouting();           // <-- THIS must come before MapHub
 
 app.UseAuthorization();
 
-app.MapHub<CameraHub>("/cameraHub");  // Map endpoints after UseRouting
 
 app.MapControllerRoute(
     name: "default",
