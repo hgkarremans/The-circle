@@ -1,5 +1,6 @@
 using MediatR;
 using The_circle.Application.Commands;
+using The_circle.Domain;
 using The_circle.Domain.Models;
 
 namespace The_circle.Application.Handlers;

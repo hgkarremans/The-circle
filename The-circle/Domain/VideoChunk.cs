@@ -1,4 +1,6 @@
-namespace The_circle.Domain.Models;
+using The_circle.Domain.Models;
+
+namespace The_circle.Domain;
 
 public class VideoChunk : IVideoChunk
 {
