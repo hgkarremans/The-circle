@@ -20,22 +20,18 @@ public class AuthController : Controller
             return View();
         }
 
-        // Laad het geüploade certificaat van de gebruiker
         using var ms = new MemoryStream();
         certFile.CopyTo(ms);
         var cert = new X509Certificate2(ms.ToArray());
 
-        // Gebruik je bestaande werkende pad
         var rootCert = new X509Certificate2("../truYou-ca/circle-root.crt");
 
-        // Bouw de trust chain
         var chain = new X509Chain();
         chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
         chain.ChainPolicy.CustomTrustStore.Add(rootCert);
         chain.ChainPolicy.VerificationFlags = X509VerificationFlags.NoFlag;
         chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
 
-        // Valideer certificaat
         bool trusted = chain.Build(cert);
         bool emailMatches = cert.Subject.Contains($"CN={email}", StringComparison.OrdinalIgnoreCase);
 

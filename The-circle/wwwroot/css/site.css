@@ -1,22 +1,103 @@
+/* Base font and layout */
 html {
-  font-size: 14px;
+    font-size: 14px;
+    position: relative;
+    min-height: 100%;
 }
-
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
+    html { font-size: 16px; }
 }
 
 body {
-  margin-bottom: 60px;
+    margin-bottom: 60px;
+    background-color: #333; 
+    color: #eee; 
 }
+
+.navbar-custom {
+    background-color: #D52532;
+}
+.navbar-custom .navbar-brand,
+.navbar-custom .nav-link {
+    color: #fff !important;
+}
+.navbar-custom .nav-link:hover,
+.navbar-custom .nav-link:focus {
+    color: #FFD2D2 !important;
+}
+
+
+.btn-primary,
+.btn-red {
+    background-color: #E10600 !important;
+    border-color: #E10600 !important;
+    color: #fff !important;
+}
+.btn-primary:hover,
+.btn-red:hover,
+.btn-primary:focus,
+.btn-red:focus {
+    background-color: #FF2A00 !important;
+    border-color: #FF2A00 !important;
+}
+
+.btn-outline-red {
+    background-color: transparent;
+    color: #E10600 !important;
+    border: 2px solid #E10600 !important;
+}
+.btn-outline-red:hover {
+    background-color: rgba(225, 6, 0, 0.1);
+}
+
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
+    box-shadow:
+            0 0 0 0.1rem #eee,
+            0 0 0 0.25rem rgba(225, 6, 0, 0.7);
+    border-color: #E10600;
+}
+/* Camera Zender layout */
+.camera-zender-body {
+    height: 100%;
+    margin: 0;
+    background-color: #333;
+    color: #eee;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.center-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Camera stream styling */
+video {
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+/* Red button styles */
+.btn-outline-red {
+    background-color: transparent;
+    color: #E10600 !important;
+    border: 2px solid #E10600 !important;
+}
+.btn-outline-red:hover {
+    background-color: rgba(225, 6, 0, 0.1);
+}
+.btn:focus {
+    box-shadow:
+            0 0 0 0.1rem #eee,
+            0 0 0 0.25rem rgba(225, 6, 0, 0.7);
+    border-color: #E10600;
+}
+
