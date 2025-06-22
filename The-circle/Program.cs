@@ -12,6 +12,8 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Pr
 builder.Services.AddSingleton<VideoFrameBufferService>();
 builder.Services.AddHostedService<UdpVideoListenerService>();
 
+builder.Services.AddSession();
+
 
 var app = builder.Build();
 
@@ -28,6 +30,7 @@ app.UseRouting();
 
 app.UseAuthorization();
 
+app.UseSession();
 
 app.MapControllerRoute(
     name: "default",

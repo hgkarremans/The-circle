@@ -15,58 +15,68 @@ public class VideoChunkController : ControllerBase
     private readonly IMediator _mediator;
     private readonly UdpClient _udpClient;
     private readonly IPEndPoint _broadcastEndpoint;
+    private readonly IWebHostEnvironment _env;
 
-    public VideoChunkController(IMediator mediator)
+    public VideoChunkController(IMediator mediator, IWebHostEnvironment env)
     {
         _mediator = mediator;
+        _env = env;
         _udpClient = new UdpClient();
-        _broadcastEndpoint = new IPEndPoint(IPAddress.Broadcast, 9000); 
+        _broadcastEndpoint = new IPEndPoint(IPAddress.Broadcast, 9000);
     }
 
     [HttpPost]
     public async Task<IActionResult> ReceiveChunk()
     {
+        // 0. Haal certificaat op uit sessie
+        var certRaw = HttpContext.Session.Get("TruYouCert");
+        if (certRaw == null)
+            return Unauthorized("Je bent niet ingelogd of certificaat ontbreekt.");
+
+        var cert = new X509Certificate2(certRaw);
+        using var rsa = cert.GetRSAPrivateKey();
+
+        // 1. Haal headers op
         var streamId = Request.Headers["X-Stream-Id"].ToString();
         var chunkIndex = int.Parse(Request.Headers["X-Chunk-Index"]);
 
+        // 2. Lees de chunk (JPEG frame)
         using var ms = new MemoryStream();
         await Request.Body.CopyToAsync(ms);
         var chunk = ms.ToArray();
 
-        // 1. Laad certificaat
-        var cert = new X509Certificate2("../truYou-ca/hg.karremans/karremans.pfx", "test123");
-        using var rsa = cert.GetRSAPrivateKey();
-
-        // 2. Maak handtekening
+        // 3. Genereer handtekening over de chunk
         var signature = rsa.SignData(chunk, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        var certBytes = cert.Export(X509ContentType.Cert); // .crt-formaat
 
-        // 3. Bouw pakket met alles erin
+        // 4. Exporteer .crt (zodat ontvanger kan valideren)
+        var certBytes = cert.Export(X509ContentType.Cert);
+
+        // 5. Bouw UDP payload
         var payload = BuildPayload(streamId, chunkIndex, chunk, signature, certBytes);
         await _udpClient.SendAsync(payload, payload.Length, _broadcastEndpoint);
 
-        // 4. Opslaan zoals eerder
+        // 6. Opslaan via CQRS
         await _mediator.Send(new SaveVideoChunkCommand(streamId, chunkIndex, chunk));
         return Ok();
     }
+
 
     private byte[] BuildPayload(string streamId, int chunkIndex, byte[] chunk, byte[] signature, byte[] certBytes)
     {
         using var ms = new MemoryStream();
         using var writer = new BinaryWriter(ms);
 
-        writer.Write(Guid.Parse(streamId).ToByteArray());
-        writer.Write(chunkIndex);
-        writer.Write(chunk.Length);
-        writer.Write(chunk);
+        writer.Write(Guid.Parse(streamId).ToByteArray()); // 16 bytes
+        writer.Write(chunkIndex);                         // 4 bytes
+        writer.Write(chunk.Length);                       // 4 bytes
+        writer.Write(chunk);                              // n bytes
 
-        writer.Write((ushort)signature.Length);
-        writer.Write(signature);
+        writer.Write((ushort)signature.Length);           // 2 bytes
+        writer.Write(signature);                          // m bytes
 
-        writer.Write((ushort)certBytes.Length);
-        writer.Write(certBytes);
+        writer.Write((ushort)certBytes.Length);           // 2 bytes
+        writer.Write(certBytes);                          // k bytes
 
         return ms.ToArray();
     }
-
 }
