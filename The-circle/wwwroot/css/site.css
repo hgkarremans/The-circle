@@ -60,44 +60,50 @@ body {
             0 0 0 0.25rem rgba(225, 6, 0, 0.7);
     border-color: #E10600;
 }
-/* Camera Zender layout */
-.camera-zender-body {
-    height: 100%;
-    margin: 0;
-    background-color: #333;
-    color: #eee;
-    font-size: 14px;
+.camera-wrapper {
+    min-height: calc(100vh - 120px);
     display: flex;
-    align-items: center;
     justify-content: center;
-}
-
-.center-content {
-    display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    padding: 2rem 1rem;
 }
-
-/* Camera stream styling */
-video {
+/* Camera container sizing */
+.camera-box {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    aspect-ratio: 4 / 3;
+    border: 2px solid black;
+    background-color: #555;
     border-radius: 8px;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+    overflow: hidden;
 }
 
-/* Red button styles */
-.btn-outline-red {
-    background-color: transparent;
-    color: #E10600 !important;
-    border: 2px solid #E10600 !important;
+/* Responsive video */
+.camera-video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
-.btn-outline-red:hover {
-    background-color: rgba(225, 6, 0, 0.1);
+
+/* Placeholder icon centered inside empty box */
+.camera-placeholder {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
-.btn:focus {
-    box-shadow:
-            0 0 0 0.1rem #eee,
-            0 0 0 0.25rem rgba(225, 6, 0, 0.7);
-    border-color: #E10600;
+.camera-placeholder img {
+    width: 80px;
+    height: 80px;
+    opacity: 0.5;
 }
+
+/* Hide placeholder when video is active */
+.camera-active .camera-placeholder {
+    display: none;
+}
+
+
 

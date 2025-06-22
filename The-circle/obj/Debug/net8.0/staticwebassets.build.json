@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "E8GnUNb04QBbE/pJzt3G2TCeWAuxl7UhdSyBLo82bGo=",
+  "Hash": "HsPDs8Z++EacR0rwwpZpjSG4TD4NDa1Re60pb7LxKmI=",
   "Source": "The-circle",
   "BasePath": "_content/The-circle",
   "Mode": "Default",
@@ -91,6 +91,25 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\favicon.ico"
+    },
+    {
+      "Identity": "C:\\Users\\hgkar\\Documents\\Avans\\Jaar3\\Periode4\\The-circle-herkansing\\The-circle\\The-circle\\wwwroot\\images\\no-video.png",
+      "SourceId": "The-circle",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\hgkar\\Documents\\Avans\\Jaar3\\Periode4\\The-circle-herkansing\\The-circle\\The-circle\\wwwroot\\",
+      "BasePath": "_content/The-circle",
+      "RelativePath": "images/no-video.png",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\images\\no-video.png"
     },
     {
       "Identity": "C:\\Users\\hgkar\\Documents\\Avans\\Jaar3\\Periode4\\The-circle-herkansing\\The-circle\\The-circle\\wwwroot\\js\\site.js",
