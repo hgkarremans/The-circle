@@ -21,7 +21,7 @@ namespace The_circle.Presentation.Controllers
         {
             Response.ContentType = "text/event-stream";
             Response.Headers["Cache-Control"]     = "no-cache";
-            Response.Headers["X-Accel-Buffering"] = "no";  // for Nginx
+            Response.Headers["X-Accel-Buffering"] = "no";
 
             int lastChunkIndex = -1;
 
@@ -30,7 +30,6 @@ namespace The_circle.Presentation.Controllers
                 var frame = _buffer.GetFrameWithMetadata(streamId);
                 if (frame != null && frame.ChunkIndex != lastChunkIndex)
                 {
-                    // ── Extract CN from the DER‐encoded cert in this frame
                     string email = "Onbekend";
                     try
                     {

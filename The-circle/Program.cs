@@ -26,7 +26,6 @@ builder.Services.AddSession(options =>
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite("Data Source=thecircle.db"));
 
-builder.Services.AddSingleton<IUserCameraWriteRepository, InMemoryUserCameraWriteRepository>();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Program>());
 builder.Services.AddSingleton<VideoFrameBufferService>();
 builder.Services.AddHostedService<UdpVideoListenerService>();

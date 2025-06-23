@@ -24,10 +24,8 @@ namespace The_circle.Presentation.Controllers
 
             var streams = activeIds.Select(id =>
             {
-                // default if no cert / extraction fails
                 var email = "Onbekend";
 
-                // try grab the last frame’s cert and extract CN
                 var frame = _buffer.GetFrameWithMetadata(id);
                 if (frame?.Certificate != null)
                 {
@@ -40,7 +38,7 @@ namespace The_circle.Presentation.Controllers
                     }
                     catch
                     {
-                        // swallow; leave “Onbekend”
+                        Console.WriteLine($"[GetStreams] Error extracting CN for stream");
                     }
                 }
 

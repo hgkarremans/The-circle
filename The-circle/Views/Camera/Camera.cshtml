@@ -44,7 +44,6 @@ var certBase64 = ViewBag.CertBase64 as string ?? "";
     let stream, privateKey, certBytes, chunkIndex = 0;
     const streamId = crypto.randomUUID();
 
-    // Decode cert injected by Razor
     try {
         const cleanB64 = `@Html.Raw(certBase64)`.replace(/[\r\n\s]/g,'');
         const bin = atob(cleanB64);
@@ -56,7 +55,6 @@ var certBase64 = ViewBag.CertBase64 as string ?? "";
         status.textContent = "❌ Failed to load certificate.";
     }
 
-    // Private key upload only
     privateKeyInput.addEventListener('change', async () => {
         const pem = await privateKeyInput.files[0].text();
         const b64 = pem.replace(/-----[^-]+-----/g,'').replace(/\s+/g,'');
@@ -77,7 +75,6 @@ var certBase64 = ViewBag.CertBase64 as string ?? "";
         }
     });
 
-    // Start/stop streaming
     btn.onclick = async () => {
         if (!privateKey || !certBytes) {
             status.textContent = "❌ Upload private key & ensure cert loaded.";
@@ -96,7 +93,6 @@ var certBase64 = ViewBag.CertBase64 as string ?? "";
         }
     };
 
-    // Helpers
     function streamIdToBytes(guid) {
         const hex = guid.replace(/-/g,''), bytes = new Uint8Array(16);
         for (let i=0; i<16; i++) bytes[i] = parseInt(hex.substr(2*i,2),16);

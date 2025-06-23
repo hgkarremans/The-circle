@@ -36,18 +36,15 @@ public class VideoChunkController : ControllerBase
             var chunkIndex  = reader.ReadInt32();
             var chunkLength = reader.ReadInt32();
 
-            // validation omitted for brevity...
             var chunk = reader.ReadBytes(chunkLength);
             var sigLength  = reader.ReadUInt16();
             var signature  = reader.ReadBytes(sigLength);
             var certLength = reader.ReadUInt16();
             var certBytes  = reader.ReadBytes(certLength);
 
-            // Broadcast via UDP
             var payload = BuildPayload(streamId, chunkIndex, chunk, signature, certBytes);
             await _udpClient.SendAsync(payload, payload.Length, _broadcastEndpoint);
 
-            // Persist with signature & certificate
             var cmd = new SaveVideoChunkCommand(
                 streamId.ToString(),
                 chunkIndex,

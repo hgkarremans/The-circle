@@ -25,10 +25,8 @@ public class AuthController : Controller
             using var ms = new MemoryStream();
             certFile.CopyTo(ms);
 
-            // Alleen het certificaat laden (zonder private key!)
             var cert = new X509Certificate2(ms.ToArray());
 
-            // Valideer met root CA
             var rootCert = new X509Certificate2("../truYou-ca/circle-root.crt");
             var chain = new X509Chain();
             chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
@@ -42,7 +40,7 @@ public class AuthController : Controller
             if (trusted && emailMatches)
             {
                 HttpContext.Session.SetString("TruYouEmail", email);
-                HttpContext.Session.Set("TruYouCert", cert.Export(X509ContentType.Cert)); // Alleen de publieke key
+                HttpContext.Session.Set("TruYouCert", cert.Export(X509ContentType.Cert)); 
 
                 return RedirectToAction("StreamingHub", "Camera");
             }

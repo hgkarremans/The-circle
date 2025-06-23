@@ -31,14 +31,11 @@ var streamId = ViewBag.StreamId;
     evtSource.onmessage = async event => {
         const payload = JSON.parse(event.data);
 
-        // 1) update the email in the UI
         emailLabel.textContent = payload.email;
 
-        // 2) verify signature as before…
         const chunk     = Uint8Array.from(atob(payload.chunk),     c => c.charCodeAt(0));
         const signature = Uint8Array.from(atob(payload.signature), c => c.charCodeAt(0));
         const publicKey = await (async () => {
-            // extract publicKey from payload.certificate…
             const certBuf = base64ToArrayBuffer(payload.certificate);
             const asn1    = fromBER(certBuf);
             const cert    = new Certificate({ schema: asn1.result });

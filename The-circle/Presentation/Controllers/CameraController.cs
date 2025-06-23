@@ -8,22 +8,19 @@ public class CameraController : Controller
     [HttpGet("/Camera/Stream")]
     public IActionResult Camera()
     {
-        // 🔑 Read the very same session key
         var certBytes = HttpContext.Session.Get("TruYouCert");
         if (certBytes == null)
             return RedirectToAction("Login", "Auth");
 
-        // Pass base64−no−newlines into the view
         ViewBag.CertBase64 = Convert.ToBase64String(certBytes);
         ViewBag.Email      = HttpContext.Session.GetString("TruYouEmail") ?? "Onbekend";
 
-        return View(); // will render Camera.cshtml
+        return View();
     }
 
     [HttpGet("/Camera/ReceiveStream")]
     public IActionResult ReceiveStream(Guid streamId)
     {
-        // ▶︎ Extract the CN once from the session-stored cert:
         string email = "Onbekend";
         var certBytes = HttpContext.Session.Get("TruYouCert");
         if (certBytes != null)
