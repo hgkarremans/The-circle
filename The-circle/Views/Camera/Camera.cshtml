@@ -1,230 +1,137 @@
 @{
+Layout = null;
+var certBase64 = ViewBag.CertBase64 as string ?? "";
+var email      = ViewBag.Email      as string ?? "Onbekend";
 }
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Camera Stream</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <style>
-        body {
-            background-color: #222;
-            color: #eee;
-            font-family: sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .container {
-            text-align: center;
-        }
-        .camera-video {
-            width: 320px;
-            height: 240px;
-            border: 2px solid #555;
-            background-color: black;
-        }
-    </style>
+    <meta charset="utf-8" />
+    <title>Camera Stream - @email</title>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
 </head>
-<body>
-<div class="container">
-    <h1>Camera Stream</h1>
+<body class="d-flex justify-content-center align-items-center vh-100 bg-dark text-light">
+<div class="text-center">
+    <h1>Camera Stream — @email</h1>
 
     <div class="mb-3">
-        <label>Upload Private Key (.pem)</label>
+        <label class="form-label">Upload Private Key (.pem)</label>
         <input type="file" id="privateKeyFile" accept=".pem" class="form-control" />
     </div>
-    <div class="mb-3">
-        <label>Upload Certificate (.crt)</label>
-        <input type="file" id="certFile" accept=".crt" class="form-control" />
-    </div>
 
-    <video id="video" class="camera-video" autoplay muted></video><br />
+    <video id="video" width="320" height="240" autoplay muted class="border"></video><br/>
     <button id="toggleBtn" class="btn btn-danger mt-3">Start Camera</button>
-
     <p id="status" class="mt-3"></p>
 </div>
 
 <script>
+    const status = document.getElementById('status');
+    const privateKeyInput = document.getElementById('privateKeyFile');
     const video = document.getElementById('video');
     const btn = document.getElementById('toggleBtn');
-    const status = document.getElementById('status');
 
-    const privateKeyInput = document.getElementById('privateKeyFile');
-    const certInput = document.getElementById('certFile');
-
-    let stream = null;
-    let isStreaming = false;
-    let privateKey = null;
-    let certBytes = null;
+    let stream, privateKey, certBytes, chunkIndex = 0;
     const streamId = crypto.randomUUID();
-    let chunkIndex = 0;
 
+    // 1) Decode cert injected by Razor (no whitespace/newlines)
+    try {
+        const cleanB64 = `@Html.Raw(certBase64)`.replace(/[\r\n\s]/g,'');
+        const bin = atob(cleanB64);
+        certBytes = new Uint8Array(bin.length);
+        for (let i=0; i<bin.length; i++) certBytes[i] = bin.charCodeAt(i);
+        status.textContent = "✅ Certificate loaded from session.";
+    } catch(e) {
+        console.error("Certificate decode error:", e);
+        status.textContent = "❌ Failed to load certificate.";
+    }
+
+    // 2) Only private key upload
+    privateKeyInput.addEventListener('change', async () => {
+        const pem = await privateKeyInput.files[0].text();
+        const b64 = pem.replace(/-----[^-]+-----/g,'').replace(/\s+/g,'');
+        const bin = atob(b64);
+        const buf = new Uint8Array(bin.length);
+        for (let i=0; i<bin.length; i++) buf[i] = bin.charCodeAt(i);
+        try {
+            privateKey = await crypto.subtle.importKey(
+                'pkcs8', buf.buffer,
+                { name:'RSASSA-PKCS1-v1_5', hash:'SHA-256' },
+                false, ['sign']
+            );
+            status.textContent = "✅ Private key loaded.";
+        } catch(err) {
+            console.error(err);
+            status.textContent = "❌ Invalid private key.";
+        }
+    });
+
+    // 3) Start/stop stream
     btn.onclick = async () => {
         if (!privateKey || !certBytes) {
-            status.textContent = "Upload both private key and certificate first!";
+            status.textContent = "❌ Upload private key & ensure cert loaded.";
             return;
         }
-
-        if (!isStreaming) {
-            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        if (!stream) {
+            stream = await navigator.mediaDevices.getUserMedia({video:true});
             video.srcObject = stream;
-            isStreaming = true;
-            btn.textContent = 'Stop Camera';
+            btn.textContent = "Stop Camera";
             sendFrames();
         } else {
-            stream.getTracks().forEach(t => t.stop());
-            video.srcObject = null;
-            isStreaming = false;
-            btn.textContent = 'Start Camera';
+            stream.getTracks().forEach(t=>t.stop());
+            stream = null; video.srcObject=null;
+            btn.textContent = "Start Camera";
         }
     };
 
-    privateKeyInput.addEventListener("change", async () => {
-        const file = privateKeyInput.files[0];
-        const text = await file.text();
-        const keyBuffer = pemToArrayBuffer(text);
-
-        try {
-            privateKey = await window.crypto.subtle.importKey(
-                "pkcs8",
-                keyBuffer,
-                {
-                    name: "RSASSA-PKCS1-v1_5",
-                    hash: "SHA-256"
-                },
-                false,
-                ["sign"]
-            );
-            status.textContent = "✅ Private key loaded.";
-        } catch (err) {
-            status.textContent = "❌ Failed to import private key.";
-            console.error(err);
-        }
-    });
-
-    certInput.addEventListener("change", async () => {
-        const file = certInput.files[0];
-        const text = await file.text();
-        certBytes = new Uint8Array(pemToArrayBuffer(text));
-        status.textContent = "✅ Certificate loaded.";
-    });
-
-    function pemToArrayBuffer(pem) {
-        const b64 = pem.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
-        const binary = atob(b64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        return bytes.buffer;
-    }
-
+    // 4) buildPayload & sendFrames (little-endian for all ints)
     function streamIdToBytes(guid) {
-        const hex = guid.replace(/-/g, '');
-        const bytes = new Uint8Array(16);
-        for (let i = 0; i < 16; i++) {
-            bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
-        }
+        const hex = guid.replace(/-/g,''), bytes = new Uint8Array(16);
+        for (let i=0;i<16;i++) bytes[i] = parseInt(hex.substr(2*i,2),16);
         return bytes;
     }
 
-    function buildPayload(streamIdBytes, chunkIndex, chunk, signature, certBytes) {
-        const payloadLength =
-            16 +       // Stream ID
-            4 +        // Chunk index
-            4 +        // Chunk length
-            chunk.length +
-            2 +        // Signature length
-            signature.length +
-            2 +        // Cert length
-            certBytes.length;
-
-        const buffer = new ArrayBuffer(payloadLength);
-        const view = new DataView(buffer);
-        const uint8 = new Uint8Array(buffer);
-        let offset = 0;
-
-        // Stream ID (16 bytes)
-        uint8.set(streamIdBytes, offset);
-        offset += 16;
-
-        // Chunk index (4 bytes)
-        view.setInt32(offset, chunkIndex, true); // little-endian
-        offset += 4;
-
-        // Chunk length (4 bytes)
-        view.setInt32(offset, chunk.length, true);
-        offset += 4;
-
-        // Chunk data
-        uint8.set(chunk, offset);
-        offset += chunk.length;
-
-        // Signature length (2 bytes)
-        view.setUint16(offset, signature.length, true);
-        offset += 2;
-
-        // Signature bytes
-        uint8.set(signature, offset);
-        offset += signature.length;
-
-        // Certificate length (2 bytes)
-        view.setUint16(offset, certBytes.length, true);
-        offset += 2;
-
-        // Certificate bytes
-        uint8.set(certBytes, offset);
-        offset += certBytes.length;
-
-        return buffer;
+    function buildPayload(idBytes, idx, chunk, sig, cert) {
+        const total = 16+4+4+chunk.length+2+sig.length+2+cert.length;
+        const buf = new ArrayBuffer(total), view = new DataView(buf), u8 = new Uint8Array(buf);
+        let o = 0;
+        u8.set(idBytes, o); o+=16;
+        view.setInt32(o, idx, true); o+=4;
+        view.setInt32(o, chunk.length, true); o+=4;
+        u8.set(chunk, o); o+=chunk.length;
+        view.setUint16(o, sig.length, true); o+=2;
+        u8.set(sig, o); o+=sig.length;
+        view.setUint16(o, cert.length, true); o+=2;
+        u8.set(cert, o);
+        return buf;
     }
 
-
     function sendFrames() {
-        const track = stream.getVideoTracks()[0];
-        const capture = new ImageCapture(track);
-        const streamIdBytes = streamIdToBytes(streamId);
-
-        async function captureAndSend() {
-            const bitmap = await capture.grabFrame();
-            const canvas = document.createElement('canvas');
-            canvas.width = bitmap.width;
-            canvas.height = bitmap.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(bitmap, 0, 0);
-
-            canvas.toBlob(async (blob) => {
-                const buffer = await blob.arrayBuffer();
-
-                const signature = await crypto.subtle.sign(
-                    { name: "RSASSA-PKCS1-v1_5" },
-                    privateKey,
-                    buffer
-                );
-
-                const payload = buildPayload(
-                    streamIdBytes,
-                    chunkIndex++,
-                    new Uint8Array(buffer),
-                    new Uint8Array(signature),
-                    certBytes
-                );
-
-                await fetch("/api/videochunk", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/octet-stream",
-                        "X-Stream-Id": streamId,
-                        "X-Chunk-Index": chunkIndex - 1
+        const cap = new ImageCapture(stream.getVideoTracks()[0]), idBytes = streamIdToBytes(streamId);
+        (async function loop() {
+            const frm = await cap.grabFrame();
+            const c = document.createElement('canvas');
+            c.width=frm.width; c.height=frm.height;
+            c.getContext('2d').drawImage(frm,0,0);
+            c.toBlob(async blob=>{
+                const chunk = new Uint8Array(await blob.arrayBuffer());
+                const sig   = new Uint8Array(await crypto.subtle.sign(
+                    {name:'RSASSA-PKCS1-v1_5'}, privateKey, chunk
+                ));
+                const payload = buildPayload(idBytes, chunkIndex++, chunk, sig, certBytes);
+                await fetch('/api/videochunk',{
+                    method:'POST',
+                    headers:{
+                        'Content-Type':'application/octet-stream',
+                        'X-Stream-Id':streamId,
+                        'X-Chunk-Index':chunkIndex-1
                     },
-                    body: payload,
-                    credentials: "include"
+                    body:payload,
+                    credentials:'include'
                 });
-            }, 'image/jpeg', 0.5);
-
-            if (isStreaming) setTimeout(captureAndSend, 100);
-        }
-
-        captureAndSend();
+            },'image/jpeg',0.5);
+            if(stream) setTimeout(loop,100);
+        })();
     }
 </script>
 </body>
