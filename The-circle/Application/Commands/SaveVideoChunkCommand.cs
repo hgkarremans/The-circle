@@ -4,14 +4,19 @@ namespace The_circle.Application.Commands;
 
 public class SaveVideoChunkCommand : IRequest<Unit>
 {
-    public String StreamId { get; set; }
-    public int ChunkIndex { get; set; }
-    public byte[] Chunk { get; set; }
+    public string StreamId       { get; }
+    public int    ChunkIndex     { get; }
+    public byte[] Chunk          { get; }
+    public byte[] Signature      { get; }
+    public byte[] Certificate    { get; }
 
-    public SaveVideoChunkCommand(String streamId, int chunkIndex, byte[] chunk)
+    public SaveVideoChunkCommand(string streamId, int chunkIndex, byte[] chunk, byte[] signature, byte[] certificate)
     {
-        StreamId = streamId;
-        ChunkIndex = chunkIndex;
-        Chunk = chunk;
+        StreamId    = streamId;
+        ChunkIndex  = chunkIndex;
+        Chunk       = chunk;
+        Signature   = signature;
+        Certificate = certificate;
     }
 }
+

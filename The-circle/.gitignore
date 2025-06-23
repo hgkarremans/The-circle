@@ -138,3 +138,7 @@ $RECYCLE.BIN/
 _NCrunch*
 
 wwwroot/keys
+
+Migrations
+
+thecircle.db

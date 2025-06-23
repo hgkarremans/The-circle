@@ -17,18 +17,16 @@ public class SaveVideoChunkCommandHandler : IRequestHandler<SaveVideoChunkComman
     public async Task<Unit> Handle(SaveVideoChunkCommand request, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(request.StreamId, out var streamGuid))
-        {
-            Console.WriteLine($"[Handler] Invalid GUID received: {request.StreamId}");
             throw new ArgumentException("Invalid StreamId GUID format");
-        }
-        
+
         var entity = new VideoChunk
         {
-            
-            StreamId = streamGuid,
-            ChunkIndex = request.ChunkIndex,
-            ChunkData = request.Chunk,
-            Timestamp = DateTime.UtcNow
+            StreamId    = streamGuid,
+            ChunkIndex  = request.ChunkIndex,
+            ChunkData   = request.Chunk,
+            Signature   = request.Signature,
+            Certificate = request.Certificate,
+            Timestamp   = DateTime.UtcNow
         };
 
         await _repository.SaveChunkAsync(entity);
