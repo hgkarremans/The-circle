@@ -1,30 +1,40 @@
 @{
-Layout = null;
+ViewData["Title"] = $"Camera Stream — { (ViewBag.Email ?? "Onbekend") }";
 var certBase64 = ViewBag.CertBase64 as string ?? "";
-var email      = ViewBag.Email      as string ?? "Onbekend";
 }
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8" />
-    <title>Camera Stream - @email</title>
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
-</head>
-<body class="d-flex justify-content-center align-items-center vh-100 bg-dark text-light">
-<div class="text-center">
-    <h1>Camera Stream — @email</h1>
+<style>
+    /* only page-specific CSS here */
+    .camera-container {
+        background-color: #222;
+        color: #eee;
+        min-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    .camera-video {
+        width: 320px;
+        height: 240px;
+        border: 2px solid #555;
+        background-color: black;
+    }
+</style>
 
-    <div class="mb-3">
+<div class="camera-container">
+    <h1>Camera Stream — @ViewBag.Email</h1>
+
+    <div class="mb-3 w-100" style="max-width:500px;">
         <label class="form-label">Upload Private Key (.pem)</label>
         <input type="file" id="privateKeyFile" accept=".pem" class="form-control" />
     </div>
 
-    <video id="video" width="320" height="240" autoplay muted class="border"></video><br/>
-    <button id="toggleBtn" class="btn btn-danger mt-3">Start Camera</button>
-    <p id="status" class="mt-3"></p>
+    <video id="video" class="camera-video mb-3" autoplay muted></video>
+    <button id="toggleBtn" class="btn btn-danger mb-3">Start Camera</button>
+    <p id="status"></p>
 </div>
 
+@section Scripts {
 <script>
     const status = document.getElementById('status');
     const privateKeyInput = document.getElementById('privateKeyFile');
@@ -34,7 +44,7 @@ var email      = ViewBag.Email      as string ?? "Onbekend";
     let stream, privateKey, certBytes, chunkIndex = 0;
     const streamId = crypto.randomUUID();
 
-    // 1) Decode cert injected by Razor (no whitespace/newlines)
+    // Decode cert injected by Razor
     try {
         const cleanB64 = `@Html.Raw(certBase64)`.replace(/[\r\n\s]/g,'');
         const bin = atob(cleanB64);
@@ -46,13 +56,14 @@ var email      = ViewBag.Email      as string ?? "Onbekend";
         status.textContent = "❌ Failed to load certificate.";
     }
 
-    // 2) Only private key upload
+    // Private key upload only
     privateKeyInput.addEventListener('change', async () => {
         const pem = await privateKeyInput.files[0].text();
         const b64 = pem.replace(/-----[^-]+-----/g,'').replace(/\s+/g,'');
         const bin = atob(b64);
         const buf = new Uint8Array(bin.length);
         for (let i=0; i<bin.length; i++) buf[i] = bin.charCodeAt(i);
+
         try {
             privateKey = await crypto.subtle.importKey(
                 'pkcs8', buf.buffer,
@@ -66,7 +77,7 @@ var email      = ViewBag.Email      as string ?? "Onbekend";
         }
     });
 
-    // 3) Start/stop stream
+    // Start/stop streaming
     btn.onclick = async () => {
         if (!privateKey || !certBytes) {
             status.textContent = "❌ Upload private key & ensure cert loaded.";
@@ -79,21 +90,24 @@ var email      = ViewBag.Email      as string ?? "Onbekend";
             sendFrames();
         } else {
             stream.getTracks().forEach(t=>t.stop());
-            stream = null; video.srcObject=null;
+            stream = null;
+            video.srcObject = null;
             btn.textContent = "Start Camera";
         }
     };
 
-    // 4) buildPayload & sendFrames (little-endian for all ints)
+    // Helpers
     function streamIdToBytes(guid) {
         const hex = guid.replace(/-/g,''), bytes = new Uint8Array(16);
-        for (let i=0;i<16;i++) bytes[i] = parseInt(hex.substr(2*i,2),16);
+        for (let i=0; i<16; i++) bytes[i] = parseInt(hex.substr(2*i,2),16);
         return bytes;
     }
 
     function buildPayload(idBytes, idx, chunk, sig, cert) {
         const total = 16+4+4+chunk.length+2+sig.length+2+cert.length;
-        const buf = new ArrayBuffer(total), view = new DataView(buf), u8 = new Uint8Array(buf);
+        const buf = new ArrayBuffer(total);
+        const view = new DataView(buf);
+        const u8 = new Uint8Array(buf);
         let o = 0;
         u8.set(idBytes, o); o+=16;
         view.setInt32(o, idx, true); o+=4;
@@ -107,32 +121,36 @@ var email      = ViewBag.Email      as string ?? "Onbekend";
     }
 
     function sendFrames() {
-        const cap = new ImageCapture(stream.getVideoTracks()[0]), idBytes = streamIdToBytes(streamId);
+        const cap = new ImageCapture(stream.getVideoTracks()[0]);
+        const idBytes = streamIdToBytes(streamId);
+
         (async function loop() {
             const frm = await cap.grabFrame();
             const c = document.createElement('canvas');
-            c.width=frm.width; c.height=frm.height;
-            c.getContext('2d').drawImage(frm,0,0);
-            c.toBlob(async blob=>{
+            c.width = frm.width; c.height = frm.height;
+            c.getContext('2d').drawImage(frm, 0, 0);
+
+            c.toBlob(async blob => {
                 const chunk = new Uint8Array(await blob.arrayBuffer());
-                const sig   = new Uint8Array(await crypto.subtle.sign(
+                const sig = new Uint8Array(await crypto.subtle.sign(
                     {name:'RSASSA-PKCS1-v1_5'}, privateKey, chunk
                 ));
                 const payload = buildPayload(idBytes, chunkIndex++, chunk, sig, certBytes);
+
                 await fetch('/api/videochunk',{
                     method:'POST',
                     headers:{
                         'Content-Type':'application/octet-stream',
-                        'X-Stream-Id':streamId,
-                        'X-Chunk-Index':chunkIndex-1
+                        'X-Stream-Id': streamId,
+                        'X-Chunk-Index': chunkIndex-1
                     },
-                    body:payload,
+                    body: payload,
                     credentials:'include'
                 });
-            },'image/jpeg',0.5);
-            if(stream) setTimeout(loop,100);
+            }, 'image/jpeg', 0.5);
+
+            if(stream) setTimeout(loop, 100);
         })();
     }
 </script>
-</body>
-</html>
+}
