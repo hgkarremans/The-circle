@@ -3,7 +3,7 @@ using The_circle.Application.Services;
 
 namespace The_circle.Presentation.Controllers;
 
-[ApiController]
+[ApiController] 
 [Route("api/[controller]")]
 public class StreamsController : ControllerBase
 {
@@ -20,4 +20,5 @@ public class StreamsController : ControllerBase
         var active = _buffer.GetActiveStreamIds(TimeSpan.FromSeconds(10));
         return Ok(active);
     }
+
 }

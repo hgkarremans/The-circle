@@ -1,58 +1,189 @@
+@{
+Layout = null;
+}
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Camera Zender</title>
+    <title>Camera Stream</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        body {
+            background-color: #222;
+            color: #eee;
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            text-align: center;
+        }
+        .camera-video {
+            width: 320px;
+            height: 240px;
+            border: 2px solid #555;
+            background-color: black;
+        }
+    </style>
 </head>
-<body class="camera-zender-body">
-<div class="d-flex justify-content-center align-items-center camera-wrapper">
-    <div class="center-content">
-        <div class="camera-box">
-            <video id="video" class="camera-video" autoplay muted></video>
-            <div class="camera-placeholder">
-                <img src="/images/no-video.png" alt="No video available">
-            </div>
-        </div>
-        <button id="toggleBtn" class="btn btn-outline-red mt-3">Start Camera</button>
-    </div>
-</div>
+<body>
+<div class="container">
+    <h1>Camera Stream</h1>
 
+    <div class="mb-3">
+        <label>Upload Private Key (.pem)</label>
+        <input type="file" id="privateKeyFile" accept=".pem" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label>Upload Certificate (.crt)</label>
+        <input type="file" id="certFile" accept=".crt" class="form-control" />
+    </div>
+
+    <video id="video" class="camera-video" autoplay muted></video><br />
+    <button id="toggleBtn" class="btn btn-danger mt-3">Start Camera</button>
+
+    <p id="status" class="mt-3"></p>
+</div>
 
 <script>
     const video = document.getElementById('video');
     const btn = document.getElementById('toggleBtn');
+    const status = document.getElementById('status');
+
+    const privateKeyInput = document.getElementById('privateKeyFile');
+    const certInput = document.getElementById('certFile');
+
     let stream = null;
     let isStreaming = false;
+    let privateKey = null;
+    let certBytes = null;
     const streamId = crypto.randomUUID();
     let chunkIndex = 0;
 
-    const cameraBox = document.querySelector('.camera-box');
-
     btn.onclick = async () => {
+        if (!privateKey || !certBytes) {
+            status.textContent = "Upload both private key and certificate first!";
+            return;
+        }
+
         if (!isStreaming) {
             stream = await navigator.mediaDevices.getUserMedia({ video: true });
             video.srcObject = stream;
-            video.style.display = "block"; // ensure it's visible
-            cameraBox.classList.add('camera-active');
-            sendFrames();
             isStreaming = true;
             btn.textContent = 'Stop Camera';
+            sendFrames();
         } else {
             stream.getTracks().forEach(t => t.stop());
-            video.srcObject = null;                  // ✔️ remove camera feed
-            video.removeAttribute("src");            // ✔️ make sure browser clears it
-            video.load();                            // ✔️ reset the video state
-            cameraBox.classList.remove('camera-active');
+            video.srcObject = null;
             isStreaming = false;
             btn.textContent = 'Start Camera';
-
         }
     };
+
+    privateKeyInput.addEventListener("change", async () => {
+        const file = privateKeyInput.files[0];
+        const text = await file.text();
+        const keyBuffer = pemToArrayBuffer(text);
+
+        try {
+            privateKey = await window.crypto.subtle.importKey(
+                "pkcs8",
+                keyBuffer,
+                {
+                    name: "RSASSA-PKCS1-v1_5",
+                    hash: "SHA-256"
+                },
+                false,
+                ["sign"]
+            );
+            status.textContent = "✅ Private key loaded.";
+        } catch (err) {
+            status.textContent = "❌ Failed to import private key.";
+            console.error(err);
+        }
+    });
+
+    certInput.addEventListener("change", async () => {
+        const file = certInput.files[0];
+        const text = await file.text();
+        certBytes = new Uint8Array(pemToArrayBuffer(text));
+        status.textContent = "✅ Certificate loaded.";
+    });
+
+    function pemToArrayBuffer(pem) {
+        const b64 = pem.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
+        const binary = atob(b64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return bytes.buffer;
+    }
+
+    function streamIdToBytes(guid) {
+        const hex = guid.replace(/-/g, '');
+        const bytes = new Uint8Array(16);
+        for (let i = 0; i < 16; i++) {
+            bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+        }
+        return bytes;
+    }
+
+    function buildPayload(streamIdBytes, chunkIndex, chunk, signature, certBytes) {
+        const payloadLength =
+            16 +       // Stream ID
+            4 +        // Chunk index
+            4 +        // Chunk length
+            chunk.length +
+            2 +        // Signature length
+            signature.length +
+            2 +        // Cert length
+            certBytes.length;
+
+        const buffer = new ArrayBuffer(payloadLength);
+        const view = new DataView(buffer);
+        const uint8 = new Uint8Array(buffer);
+        let offset = 0;
+
+        // Stream ID (16 bytes)
+        uint8.set(streamIdBytes, offset);
+        offset += 16;
+
+        // Chunk index (4 bytes)
+        view.setInt32(offset, chunkIndex, true); // little-endian
+        offset += 4;
+
+        // Chunk length (4 bytes)
+        view.setInt32(offset, chunk.length, true);
+        offset += 4;
+
+        // Chunk data
+        uint8.set(chunk, offset);
+        offset += chunk.length;
+
+        // Signature length (2 bytes)
+        view.setUint16(offset, signature.length, true);
+        offset += 2;
+
+        // Signature bytes
+        uint8.set(signature, offset);
+        offset += signature.length;
+
+        // Certificate length (2 bytes)
+        view.setUint16(offset, certBytes.length, true);
+        offset += 2;
+
+        // Certificate bytes
+        uint8.set(certBytes, offset);
+        offset += certBytes.length;
+
+        return buffer;
+    }
+
 
     function sendFrames() {
         const track = stream.getVideoTracks()[0];
         const capture = new ImageCapture(track);
+        const streamIdBytes = streamIdToBytes(streamId);
 
         async function captureAndSend() {
             const bitmap = await capture.grabFrame();
@@ -64,14 +195,30 @@
 
             canvas.toBlob(async (blob) => {
                 const buffer = await blob.arrayBuffer();
+
+                const signature = await crypto.subtle.sign(
+                    { name: "RSASSA-PKCS1-v1_5" },
+                    privateKey,
+                    buffer
+                );
+
+                const payload = buildPayload(
+                    streamIdBytes,
+                    chunkIndex++,
+                    new Uint8Array(buffer),
+                    new Uint8Array(signature),
+                    certBytes
+                );
+
                 await fetch("/api/videochunk", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/octet-stream",
                         "X-Stream-Id": streamId,
-                        "X-Chunk-Index": chunkIndex++
+                        "X-Chunk-Index": chunkIndex - 1
                     },
-                    body: buffer
+                    body: payload,
+                    credentials: "include"
                 });
             }, 'image/jpeg', 0.5);
 

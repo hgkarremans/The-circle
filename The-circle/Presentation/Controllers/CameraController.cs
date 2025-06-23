@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace The_circle.Controllers;
+namespace The_circle.Presentation.Controllers;
 
 public class CameraController : Controller
 {
@@ -8,7 +8,7 @@ public class CameraController : Controller
     public IActionResult ReceiveStream(Guid streamId)
     {
         ViewBag.StreamId = streamId;
-        return View("ReceiveStream"); // zoekt Views/Camera/ReceiveStream.cshtml
+        return View("ReceiveStream"); 
     }
 
     [HttpGet("/Camera/StreamHub")]

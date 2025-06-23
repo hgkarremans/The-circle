@@ -1,41 +1,38 @@
+using System.Collections.Concurrent;
+using The_circle.Domain;
+
 namespace The_circle.Application.Services;
 
 public class VideoFrameBufferService
 {
-    private readonly object _lock = new();
-    private readonly Dictionary<Guid, (int Index, string Base64, DateTime LastUpdated)> _streams = new();
+    private readonly ConcurrentDictionary<Guid, (VideoFrameDto Frame, DateTime Timestamp)> _frames = new();
 
-    public void SetFrame(Guid streamId, int chunkIndex, byte[] frame)
+    public void SetFrame(Guid streamId, int chunkIndex, byte[] chunk, byte[] signature, byte[] certificate)
     {
-        lock (_lock)
+        var dto = new VideoFrameDto
         {
-            if (_streams.TryGetValue(streamId, out var existing) && chunkIndex <= existing.Index)
-                return;
+            StreamId = streamId,
+            ChunkIndex = chunkIndex,
+            Chunk = chunk,
+            Signature = signature,
+            Certificate = certificate
+        };
 
-            var base64 = Convert.ToBase64String(frame);
-            _streams[streamId] = (chunkIndex, base64, DateTime.UtcNow);
-        }
+        _frames[streamId] = (dto, DateTime.UtcNow);
     }
 
-    public string? GetFrame(Guid streamId)
+    public VideoFrameDto? GetFrameWithMetadata(Guid streamId)
     {
-        lock (_lock)
-        {
-            return _streams.TryGetValue(streamId, out var data) ? data.Base64 : null;
-        }
+        return _frames.TryGetValue(streamId, out var result) ? result.Frame : null;
     }
 
-    public List<Guid> GetActiveStreamIds(TimeSpan maxAge)
+    public List<Guid> GetActiveStreamIds(TimeSpan recentThreshold)
     {
-        lock (_lock)
-        {
-            var now = DateTime.UtcNow;
-            return _streams
-                .Where(pair => now - pair.Value.LastUpdated < maxAge)
-                .Select(pair => pair.Key)
-                .ToList();
-        }
+        var cutoff = DateTime.UtcNow - recentThreshold;
+
+        return _frames
+            .Where(kvp => kvp.Value.Timestamp > cutoff)
+            .Select(kvp => kvp.Key)
+            .ToList();
     }
 }
-
-

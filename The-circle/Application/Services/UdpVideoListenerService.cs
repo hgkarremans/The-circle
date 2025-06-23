@@ -1,6 +1,7 @@
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using The_circle.Domain;
 
 namespace The_circle.Application.Services;
 
@@ -18,8 +19,6 @@ public class UdpVideoListenerService : BackgroundService
         var udpClient = new UdpClient(9000);
         udpClient.EnableBroadcast = true;
 
-        var rootCert = new X509Certificate2("../truYou-ca/circle-root.crt");
-
         while (!stoppingToken.IsCancellationRequested)
         {
             var result = await udpClient.ReceiveAsync();
@@ -36,28 +35,8 @@ public class UdpVideoListenerService : BackgroundService
 
             var certLen = reader.ReadUInt16();
             var certBytes = reader.ReadBytes(certLen);
-            var senderCert = new X509Certificate2(certBytes);
 
-            var chain = new X509Chain();
-            chain.ChainPolicy.ExtraStore.Add(rootCert);
-            chain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllowUnknownCertificateAuthority;
-            chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
-
-            bool certValid = chain.Build(senderCert);
-
-            var rsa = senderCert.GetRSAPublicKey();
-            bool sigValid = rsa.VerifyData(chunk, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-
-            if (certValid && sigValid)
-            {
-                _buffer.SetFrame(streamId, chunkIndex, chunk);
-                Console.WriteLine($"Verified frame {chunkIndex} from {senderCert.Subject}");
-            }
-            else
-            {
-                Console.WriteLine($"Rejected frame {chunkIndex}: Cert valid? {certValid}, Signature valid? {sigValid}");
-            }
+            _buffer.SetFrame(streamId, chunkIndex, chunk, signature, certBytes);
         }
     }
-
 }

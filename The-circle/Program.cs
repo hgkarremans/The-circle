@@ -4,16 +4,18 @@ using The_circle.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Services
 builder.Services.AddControllersWithViews();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.Cookie.HttpOnly    = true;
+    options.Cookie.IsEssential = true;
+    options.IdleTimeout        = TimeSpan.FromMinutes(30);
+});
 builder.Services.AddSingleton<IUserCameraWriteRepository, InMemoryUserCameraWriteRepository>();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Program>());
-
 builder.Services.AddSingleton<VideoFrameBufferService>();
 builder.Services.AddHostedService<UdpVideoListenerService>();
-
-builder.Services.AddSession();
-
 
 var app = builder.Build();
 
@@ -25,12 +27,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
-app.UseRouting();           
-
-app.UseAuthorization();
-
+app.UseRouting();
 app.UseSession();
+app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
