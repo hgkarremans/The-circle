@@ -1,5 +1,4 @@
 @{
-var streamerEmail = ViewBag.Email as string ?? "Onbekend";
 var streamId = ViewBag.StreamId;
 }
 <!DOCTYPE html>
@@ -8,80 +7,59 @@ var streamId = ViewBag.StreamId;
     <title>Bekijk stream</title>
 </head>
 <body>
-<h2>Inkomende stream van: @streamerEmail</h2>
+<h2>Inkomende stream van: <span id="streamerEmail">Onbekend</span></h2>
 <img id="frame" width="640" height="480" />
 <p id="status">⏳ Wacht op geldig frame...</p>
 
-<!-- Moderne versie via Skypack CDN -->
 <script type="module">
     import * as asn1js from 'https://cdn.skypack.dev/asn1js';
     import { fromBER } from 'https://cdn.skypack.dev/asn1js';
     import { Certificate } from 'https://cdn.skypack.dev/pkijs';
 
-    const img = document.getElementById('frame');
-    const status = document.getElementById('status');
-    const streamId = "@streamId";
+    const img           = document.getElementById('frame');
+    const status        = document.getElementById('status');
+    const emailLabel    = document.getElementById('streamerEmail');
+    const evtSource     = new EventSource(`/stream/${"@streamId"}`);
 
-    const evtSource = new EventSource(`/stream/${streamId}`);
-
-    // base64 → ArrayBuffer
     function base64ToArrayBuffer(b64) {
-        const binary = atob(b64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-            bytes[i] = binary.charCodeAt(i);
-        }
-        return bytes.buffer;
+        const bin = atob(b64), len = bin.length;
+        const buf = new Uint8Array(len);
+        for (let i = 0; i < len; i++) buf[i] = bin.charCodeAt(i);
+        return buf.buffer;
     }
 
-    // Extract public key uit .crt
-    async function extractPublicKeyFromCertificate(certBase64) {
-        const certBuffer = base64ToArrayBuffer(certBase64);
-        const asn1 = fromBER(certBuffer);
-        if (asn1.offset === -1) throw new Error("Invalid certificate format");
+    evtSource.onmessage = async event => {
+        const payload = JSON.parse(event.data);
 
-        const cert = new Certificate({ schema: asn1.result });
-        const spkiBuffer = cert.subjectPublicKeyInfo.toSchema().toBER(false);
+        // 1) update the email in the UI
+        emailLabel.textContent = payload.email;
 
-        return crypto.subtle.importKey(
-            "spki",
-            spkiBuffer,
-            {
-                name: "RSASSA-PKCS1-v1_5",
-                hash: "SHA-256"
-            },
-            false,
-            ["verify"]
-        );
-    }
-
-    evtSource.onmessage = async function(event) {
-        try {
-            const payload = JSON.parse(event.data);
-
-            const chunk = Uint8Array.from(atob(payload.chunk), c => c.charCodeAt(0));
-            const signature = Uint8Array.from(atob(payload.signature), c => c.charCodeAt(0));
-
-            const publicKey = await extractPublicKeyFromCertificate(payload.certificate);
-
-            const isValid = await crypto.subtle.verify(
-                { name: "RSASSA-PKCS1-v1_5" },
-                publicKey,
-                signature,
-                chunk
+        // 2) verify signature as before…
+        const chunk     = Uint8Array.from(atob(payload.chunk),     c => c.charCodeAt(0));
+        const signature = Uint8Array.from(atob(payload.signature), c => c.charCodeAt(0));
+        const publicKey = await (async () => {
+            // extract publicKey from payload.certificate…
+            const certBuf = base64ToArrayBuffer(payload.certificate);
+            const asn1    = fromBER(certBuf);
+            const cert    = new Certificate({ schema: asn1.result });
+            const spki    = cert.subjectPublicKeyInfo.toSchema().toBER(false);
+            return crypto.subtle.importKey(
+                "spki", spki,
+                { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+                false, ["verify"]
             );
+        })();
 
-            if (isValid) {
-                const base64 = btoa(String.fromCharCode(...chunk));
-                img.src = "data:image/jpeg;base64," + base64;
-                status.textContent = `✅ Frame ${payload.chunkIndex} gevalideerd.`;
-            } else {
-                status.textContent = `❌ Ongeldige handtekening voor chunk ${payload.chunkIndex}`;
-            }
+        const isValid = await crypto.subtle.verify(
+            { name: "RSASSA-PKCS1-v1_5" },
+            publicKey, signature, chunk
+        );
 
-        } catch (err) {
-            console.error("Verificatiefout:", err);
-            status.textContent = "❌ Fout bij verwerken/verifiëren van frame.";
+        if (isValid) {
+            img.src = "data:image/jpeg;base64," + payload.chunk;
+            status.textContent = `✅ Frame ${payload.chunkIndex} gevalideerd.`;
+        } else {
+            status.textContent = `❌ Ongeldige handtekening voor chunk ${payload.chunkIndex}`;
         }
     };
 </script>
