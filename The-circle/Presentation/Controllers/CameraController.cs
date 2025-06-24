@@ -21,6 +21,30 @@ public class CameraController : Controller
     [HttpGet("/Camera/ReceiveStream")]
     public IActionResult ReceiveStream(Guid streamId)
     {
+        const string ActiveStreamsKey = "ActiveStreams";
+
+        // 1. Haal actieve streamIds uit sessie
+        var activeStreamsRaw = HttpContext.Session.GetString(ActiveStreamsKey);
+        var activeStreams = string.IsNullOrEmpty(activeStreamsRaw)
+            ? new List<string>()
+            : activeStreamsRaw.Split(',').ToList();
+
+        var streamIdStr = streamId.ToString();
+
+        // 2. Check of limiet bereikt is
+        if (!activeStreams.Contains(streamIdStr) && activeStreams.Count >= 4)
+        {
+            return Content("Je mag maximaal 4 streams tegelijk bekijken.");
+        }
+
+        // 3. Registreer nieuwe streamId in sessie
+        if (!activeStreams.Contains(streamIdStr))
+        {
+            activeStreams.Add(streamIdStr);
+            HttpContext.Session.SetString(ActiveStreamsKey, string.Join(',', activeStreams));
+        }
+
+        // 4. Probeer CN uit certificaat te halen
         string email = "Onbekend";
         var certBytes = HttpContext.Session.Get("TruYouCert");
         if (certBytes != null)
@@ -39,10 +63,11 @@ public class CameraController : Controller
             }
         }
 
-        ViewBag.Email    = email;
+        ViewBag.Email = email;
         ViewBag.StreamId = streamId;
         return View();
     }
+
 
 
     [HttpGet("/Camera/StreamHub")]
